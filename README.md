@@ -1,0 +1,2 @@
+# DingDingAlertWebHook
+在落地Opentelemetry时携带的日志告警webhook，模拟alertmanager接口，接受处理Loki告警组件Ruler的Post请求。
