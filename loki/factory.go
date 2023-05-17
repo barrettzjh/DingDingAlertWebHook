@@ -164,6 +164,10 @@ func (nc *NotificationChannel) StartNotifier() {
 					"text": map[string]string{
 						"content": "日志告警\n" + fmt.Sprintf("告警\n应用: %s\ntraceid: %s\n日志内容: %s\n日志描述: %s\n堆栈信息: %s\n", notification.Labels.Job, notification.Labels.Traceid, notification.Labels.Body, notification.Annotations.Summary, notification.Labels.Stack),
 					},
+					"at": map[string]interface{}{
+						"atMobiles": []string{notification.Labels.At},
+						"isAtAll":   false,
+					},
 				},
 				)
 				if err != nil {

@@ -34,6 +34,7 @@ type LokiRuleAlertStruct struct {
 	Labels       struct {
 		Alertname string `json:"alertname"`
 		Belong    string `json:"belong"`
+		At		  string `json:"at"`
 		Body      string `json:"body"`
 		Job       string `json:"job"`
 		Traceid   string `json:"traceid"`
