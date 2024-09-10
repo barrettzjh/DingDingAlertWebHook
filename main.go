@@ -12,7 +12,7 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	router.POST("/api/v2/alerts", func(c *gin.Context) {
-		var alert []loki.LokiRuleAlertStruct
+		var alert loki.AlertManagerAlert
 		if err := c.BindJSON(&alert); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"success": false,

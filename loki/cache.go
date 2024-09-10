@@ -19,12 +19,12 @@ func NewCache(expiry time.Duration) *Cache {
 	}
 }
 
-func (c *Cache) setValue(obj LokiRuleAlertStruct) {
+func (c *Cache) setValue(obj Alert) {
 	key := getObjectKey(obj)
 	c.values.Store(key, time.Now().Add(c.expiry))
 }
 
-func (c *Cache) getValue(obj LokiRuleAlertStruct) (bool, error) {
+func (c *Cache) getValue(obj Alert) (bool, error) {
 	key := getObjectKey(obj)
 	value, ok := c.values.Load(key)
 	if !ok {
@@ -44,8 +44,8 @@ func (c *Cache) getValue(obj LokiRuleAlertStruct) (bool, error) {
 	return true, nil
 }
 
-func getObjectKey(obj LokiRuleAlertStruct) string {
+func getObjectKey(obj Alert) string {
 	h := md5.New()
-	h.Write([]byte(obj.Labels.Stack))
+	h.Write([]byte(obj.Labels.Body))
 	return hex.EncodeToString(h.Sum(nil))
 }

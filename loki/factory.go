@@ -3,12 +3,13 @@ package loki
 import (
 	"context"
 	"fmt"
-	"github.com/barrettzjh/DingDingAlertWebHook/utils"
-	"golang.org/x/time/rate"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/barrettzjh/DingDingAlertWebHook/utils"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -18,7 +19,7 @@ const (
 )
 
 var (
-	webHooks = map[string]string{}
+	webHooks     = map[string]string{}
 	Channel      = NewNotificationChannel(notificationChannelSize) // 初始化告警通道
 	notifiers    = make(map[string]Notifier)                       // 存储已创建的notifier
 	notifierLock sync.Mutex                                        // 保证并发安全
@@ -69,7 +70,7 @@ func (cn *DingDingNotifier) Notify(ctx context.Context, msg interface{}) error {
 			if err := cn.limiter.Wait(context.Background()); err != nil {
 				fmt.Printf("Error waiting for limiter: %v\n", err)
 			}
-			err := utils.SendDingTalk(cn.WebHook, "告警", msg)
+			err := utils.SendDingTalkResolvedWithWebHook(cn.WebHook, "告警", msg)
 			if err != nil {
 				fmt.Printf("Error sending notification: %v\n", err)
 			} else {
@@ -108,7 +109,7 @@ func createNotifier(key string) Notifier {
 }
 
 type NotificationChannel struct {
-	c         chan LokiRuleAlertStruct
+	c         chan Alert
 	wg        sync.WaitGroup
 	processed *FixedSizeQueue
 	closed    bool
@@ -117,7 +118,7 @@ type NotificationChannel struct {
 
 func NewNotificationChannel(fixedSize int) *NotificationChannel {
 	return &NotificationChannel{
-		c:         make(chan LokiRuleAlertStruct),
+		c:         make(chan Alert),
 		closed:    false,
 		processed: NewFixedSizeQueue(fixedSize),
 		mutex:     sync.Mutex{},
@@ -136,6 +137,7 @@ func (nc *NotificationChannel) StartNotifier() {
 
 			// 避免接受大量无效重复告警
 			if ok, _ := cache.getValue(notification); ok {
+				// notification.DropAlertMsg("body内容相同，一小时仅告警一次")
 				continue
 			}
 			cache.setValue(notification)
@@ -152,8 +154,8 @@ func (nc *NotificationChannel) StartNotifier() {
 					return
 				}
 				// 防止钉钉接口异常报错
-				if len(notification.Labels.Stack) > logMaxLength {
-					notification.Labels.Stack = notification.Labels.Stack[:logMaxLength] + "..."
+				if len(notification.Labels.AttributesExceptionStacktrace) > logMaxLength {
+					notification.Labels.AttributesExceptionStacktrace = notification.Labels.AttributesExceptionStacktrace[:logMaxLength] + "..."
 				}
 				if len(notification.Labels.Body) > logMaxLength {
 					notification.Labels.Body = notification.Labels.Body[:logMaxLength] + "..."
@@ -162,7 +164,7 @@ func (nc *NotificationChannel) StartNotifier() {
 				err := notifier.Notify(ctx, map[string]interface{}{
 					"msgtype": "text",
 					"text": map[string]string{
-						"content": "日志告警\n" + fmt.Sprintf("告警\n应用: %s\ntraceid: %s\n日志内容: %s\n日志描述: %s\n堆栈信息: %s\n", notification.Labels.Job, notification.Labels.Traceid, notification.Labels.Body, notification.Annotations.Summary, notification.Labels.Stack),
+						"content": notification.GetAlertMsg(),
 					},
 					"at": map[string]interface{}{
 						"atMobiles": []string{notification.Labels.At},
