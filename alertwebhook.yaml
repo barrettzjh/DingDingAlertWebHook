@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertwebhook
+  labels:
+    app: alertwebhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertwebhook
+  template:
+    metadata:
+      labels:
+        app: alertwebhook
+    spec:
+      imagePullSecrets:
+        - name: standard
+      containers:
+        - name: alertwebhook
+          image: registry.cn-hangzhou.aliyuncs.com/xxxxx/alertwebhook:v0.0.2
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PROFILES
+              value: prod
+            - name: WEB_HOOK_changan
+              value: xxxxx43a0bffbb0c164ad470f73ecc24390401822c1367c40bced9c6d10xxxxx
+          resources:
+            requests:
+              cpu: "20m"
+              memory: "50Mi"
+            limits:
+              cpu: "200m"
+              memory: "500Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertwebhook
+  labels:
+    app: alertwebhook
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+  selector:
+    app: alertwebhook
